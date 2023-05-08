@@ -16,26 +16,25 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/login', function () {
-    return view('backoffice.login');
-});
-Route::get('/', function () {
-    return redirect()->route('articles.index');
-});
-Route::post('/login', [UserController::class, 'login'])->name('login');
-Route::get('/user/deconnect',[UserController::class, 'deconnect'])->name('deconnect');
+Route::middleware(['gzip'])->group(function () {
 
-Route::group(['middleware' => 'auth'], function () {
-    Route::post('/articles/update',[ArticleController::class,'update'])->name('articles.update');
-    Route::post('/articles/destroy',[ArticleController::class,'destroy'])->name('articles.destroy');
-    Route::resource('articles', ArticleController::class)->except(['update','destroy','index','show']);
-    Route::get('/user/articles', [ArticleController::class, 'listMine'])->name('user.articles');
+    Route::get('/login', function () {
+        return view('backoffice.login');
+    });
+    Route::get('/', function () {
+        return redirect()->route('articles.index');
+    });
+    Route::post('/login', [UserController::class, 'login'])->name('login');
+    Route::get('/user/deconnect', [UserController::class, 'deconnect'])->name('deconnect');
+
+    Route::group(['middleware' => 'auth'], function () {
+        Route::post('/articles/update', [ArticleController::class, 'update'])->name('articles.update');
+        Route::post('/articles/destroy', [ArticleController::class, 'destroy'])->name('articles.destroy');
+        Route::resource('articles', ArticleController::class)->except(['update', 'destroy', 'index', 'show']);
+        Route::get('/user/articles', [ArticleController::class, 'listMine'])->name('user.articles');
+    });
+
+    Route::get('/articles/{article}/{slug}.js', [ArticleController::class, 'fiche'])->name('articles.seo')->where(['slug' => '[a-z0-9]+(?:-[a-z0-9]+)*']);
+
+    Route::resource('articles', ArticleController::class)->only('index', 'show');
 });
-
-/* Route::get('/articles/{idarticle}/{slug}.js',function($idarticle,$slug){
-    return redirect()->route('articles.show',["article"=>$idarticle]);
-})->name('articles.seo')->where(['slug'=>'[a-z0-9]+(?:-[a-z0-9]+)*']);
- */
-Route::get('/articles/{article}/{slug}.js',[ArticleController::class,'fiche'])->name('articles.seo')->where(['slug'=>'[a-z0-9]+(?:-[a-z0-9]+)*']);
-
-Route::resource('articles',ArticleController::class)->only('index','show');

@@ -8,17 +8,25 @@ use App\Models\Category;
 use App\Models\VArticle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class ArticleController extends Controller
 {
-    public const PAGINATION=6;
+    public const PAGINATION = 6;
     public function index()
     {
-        $keyword=request()->keyword;
-        $articles=VArticle::search($keyword);
-        return view('frontoffice.liste',[
-            "articles"=>$articles,
-        ]);
+        $keyword = request()->keyword;
+        $articles = null;
+        if (!empty($keyword)) {
+            $articles = VArticle::search($keyword);
+        } else {
+            $articles = Cache::remember('listes', 120, function () {
+                return VArticle::latest('datepublication')->paginate(ArticleController::PAGINATION);
+            });
+        }
+        $response = response()->view('frontoffice.liste', ['articles' => $articles]);
+        $response->header('Cache-Control', 'max-age=3600 , public ');
+        return $response;
     }
 
     /**
@@ -47,7 +55,7 @@ class ArticleController extends Controller
 
         Article::create($credentials);
 
-        return response()->redirectTo(route('user.articles'))->with('success','Ajout réussi');
+        return response()->redirectTo(route('user.articles'))->with('success', 'Ajout réussi');
     }
 
     /**
@@ -55,8 +63,8 @@ class ArticleController extends Controller
      */
     public function show(VArticle $article)
     {
-        return view('backoffice.fiche',[
-            "article"=>$article
+        return view('backoffice.fiche', [
+            "article" => $article
         ]);
     }
 
@@ -79,7 +87,7 @@ class ArticleController extends Controller
     {
         $credentials = $request->validate([
             "idarticle" => "required",
-            "titre" => 'required', 
+            "titre" => 'required',
             "idcategorie" => 'required',
             "illustration" => '',
             "summary" => 'required',
@@ -95,7 +103,7 @@ class ArticleController extends Controller
         $article->contenu = $credentials['contenu'];
         $article->save();
 
-        return redirect()->route('user.articles')->with('success','Modification réussie');
+        return redirect()->route('user.articles')->with('success', 'Modification réussie');
     }
 
     /**
@@ -103,24 +111,25 @@ class ArticleController extends Controller
      */
     public function destroy(Request $request)
     {
-        $article=Article::findOrFail($request->idarticle);
+        $article = Article::findOrFail($request->idarticle);
         $article->delete();
-        return redirect()->route('user.articles')->with('success','Supression réussie');
+        return redirect()->route('user.articles')->with('success', 'Supression réussie');
     }
 
     public function listMine()
     {
         $user = Auth::user();
-        $articles=Article::where('idauteur',$user->iduser)->orderBy('datepublication','desc')->paginate(ArticleController::PAGINATION);
+        $articles = Article::where('idauteur', $user->iduser)->orderBy('datepublication', 'desc')->paginate(ArticleController::PAGINATION);
         return view("backoffice.liste", [
             "articles" => $articles,
             "auteur" => $user
         ]);
     }
 
-    public function fiche(VArticle $article,$slug){
-        return view('frontoffice.fiche',[
-            "article"=>$article
+    public function fiche(VArticle $article, $slug)
+    {
+        return view('frontoffice.fiche', [
+            "article" => $article
         ]);
     }
 }
