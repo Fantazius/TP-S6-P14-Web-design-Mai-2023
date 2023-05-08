@@ -1,0 +1,251 @@
+creation project
+	composer create-project --prefer-dist laravel/laravel [project-name]
+
+config database:
+ fichier .env:
+    DB_CONNECTION=pgsql
+    DB_HOST=<your_database_IP_address>
+    DB_PORT=5432
+    DB_DATABASE=postgres
+    DB_USERNAME=postgres
+    DB_PASSWORD=postgres
+
+routes: fichier routes/web.php
+    -le '/' n'est pas obligatoire
+    -route peut retourner differents types (non seulement )
+        Route::get('/zvtr', function(){
+            return 'Chaine de caractere';
+        });
+        =>AJAX(afaka miretourne JSON)
+    -'/{id}': permet de passer l'id : Route::get('/post/{id}',[Controller::class,'show])->whereNumber('id')
+    -Route::get('/post',[Controller::class,'show])->name('id')
+
+views: ressources/views
+
+controller: app/Http/Controllers
+    -ao no mi-return view
+    -Route::get('/','App/Http/Controllers/AnnonceController@index')
+    -cmd de creation:
+        php artisan make:controller TestController
+    -pour passer data:
+        view('name',compact('nom_variable',...))
+        view('name')->with('name',value)
+        view('name',[
+            'nom'=>value
+        ])
+    -ressource controller:
+        php artisan make:controller PhotoController --resource
+        php artisan make:controller PhotoController --resource --model=Category (pour modelattribute)
+
+assets:
+    -il faut installer nodeJS:
+        npm install
+    pour avoir webpack.mix.js:
+        npm install laravel-mix --save-dev
+
+models:
+    php artisan make:model Annonces -n
+        -n permet de faire une migration
+
+    create models from database
+        *composer require reliese/laravel
+        *Add the service provider to your config/app.php file Reliese\Coders\CodersServiceProvider::class
+        *Publish the config file with php artisan vendor:publish --tag=reliese-models
+        *Make sure your database is correctly configured in config/database.php and .env files.
+        *And finally issue the command: php artisan code:models
+        php .\artisan code:models --table=liaisondemandecommande
+
+launche server:
+    php artisan serve
+
+form:
+    action: {{ route('routename') }}
+    tsy maintsy asiana @csrf
+
+redirect:
+    -Route::get('/dashboard', function () {
+        return redirect('/home/dashboard');
+    });
+    -return redirect()->action([HomeController::class, 'index']);
+    -return redirect()->route('profile', ['id' => 1]);
+    -return redirect()->action(
+        [UserController::class, 'profile'], ['id' => 1]
+     );
+
+pendant DEPLOIEMENT:
+    -pour que la fonction asset() marche: ajouter dans App\Providers\AppServiceProvider.php
+        public function boot()
+        {
+            if($this->app->environment('production')) {
+                \URL::forceScheme('https');
+            }
+        }
+
+PDF:
+    -lancer commande: composer require barryvdh/laravel-dompdf
+    -Intégrer laravel-dompdf: 
+        config/app.php: 
+            'providers' => [
+            	// Service Provider DomPDF
+            	Barryvdh\DomPDF\ServiceProvider::class
+
+            ],
+            'aliases' => Facade::defaultAliases()->merge([
+            
+            	// Façade Laravel-dompdf
+            	"PDF" => Barryvdh\DomPDF\Facade::class
+
+            ])->toArray(),
+    -Configurer laravel-dompdf: php artisan vendor:publish --provider="Barryvdh\DomPDF\ServiceProvider"
+        Pour créer (copier) le fichier de configuration config/dompdf.php dans lequel vous pouvez modifier les options par défaut de dompdf
+
+Auth
+    -pour gérer facilement le login
+    - dans config/auth.php ajouter:
+        'guards' => [
+             'web' => [
+                 'driver' => 'session',
+                 'provider' => 'users',
+             ],
+        ],
+        'providers' => [
+             'users' => [
+                 'driver' => 'eloquent',
+                 'model' => App\Models\User::class,
+             ],
+        ],
+    -pour checker si session exist:
+        Route::get('/dashboard', function () {
+            if (Auth::check()) {
+                return view('dashboard');
+            } else {
+                return redirect()->route('login');
+            }
+        });
+
+dossier lang:
+    -pour stocker tous les messages d'erreur
+    -pour générer message en anglais:
+        php artisan lang:publish
+    -si français:
+        voir fichier zip
+        dans config/app.php faire:
+            'locale' => 'fr'
+
+repopulate form:
+    {{ old('request_attribute') }}
+
+middlewre:
+    -rôle:
+        *Authentification : Vérifiez si un utilisateur est connecté et autorisé à accéder à certaines pages de l'application.
+        *Vérification CSRF : Vérifiez si la requête HTTP est légitime et non falsifiée.
+        *Enregistrement de l'utilisateur : Enregistrez l'utilisateur et ses activités pour des raisons de sécurité ou de suivi.
+        *Mise en cache : Stockez les résultats d'une requête pour des performances améliorées.
+        *Localisation : Déterminez la langue et les préférences de l'utilisateur pour personnaliser l'expérience de l'application.
+    -création:
+        php artisan make:middleware Admin  
+
+service:
+    -command: php artisan make:provider RiakServiceProvider
+    -créer un dossier Services dans app: app/Services
+    -définir la class tel que:
+        namespace App\Services;
+
+        use Illuminate\Support\Facades\Log;
+
+        class MyService
+        {
+            public function doSomething()
+            {
+                // Do something
+            }
+        }
+    -enregistre le service dans config/app.php:
+        'providers' => [
+            // Other Service Providers
+            App\Services\MyService::class,
+        ],
+    -structure controller usant du service:
+        namespace App\Http\Controllers;
+
+        use App\Services\MyService;
+
+        class MyController extends Controller
+        {
+            protected $myService;
+
+            public function __construct(MyService $myService)
+            {
+                $this->myService = $myService;
+            }
+
+            public function index()
+            {
+                $this->myService->doSomething();
+                // Do something else
+            }
+        }
+
+pagination:
+    -utiliser paginate(nombre d'items) au lieu de get()
+    -view: {{ $items->links() }} 
+        {{ $items->links("pagination:bootstrap_4") }}
+    -si vouloir customiser pagination:
+        php artisan vendor:publish --tag=laravel-pagination
+        voir dans fichier 'resources/views/vendor/pagination' pour changer
+    -ajouter parametre à la pagination:
+        {{ $items->appends(['search' => request('search')])->links() }}
+
+
+
+to enable compression gzip: 
+	-commande: php artisan make:middleware GzipMiddleware
+	-ajout dans fichier app/http/Kernel.php dans :$middlewareAliases = 'gzip' => \App\Http\Middleware\GzipMiddleware::class,
+	-Mettre les routes dans:
+		Route::middleware(['gzip'])->group(function(){
+ 			//routes
+		});
+	-Ajout fonction dans GzipMiddleware.php:
+		public function handle($request, Closure $next){
+        		$response =$next($request);
+  		      $response->header('Content-Encoding','gzip');
+		      $response->setContent(gzencode($response->getContent(),9));
+	        	return $response;
+    }
+
+
+configuration cache serveur:
+	-commande: php artisan config:cache
+	-configuration controller:
+		public function liste(){
+			$list=Cache::remember('listes',300,function (){
+ 		           return Article::all();
+       		 });
+	        $response = response()->view('listeArticle',['listes'=>$list]);
+      	  $response->header('Cache-Control','max-age=3600 , public ');
+	        return $response;
+      	   //au lien de:
+		 //return view('listeArticle',['listes'=>Article::all()]);
+	}
+
+configuration cache client :
+	-ajouter ses ligne de code dans le fichier .htaccess:
+		# Activer la mise en cache
+		<IfModule mod_expires.c>
+		    ExpiresActive On
+
+		    # Cache les fichiers statiques pendant 30 jours
+		    ExpiresByType image/jpeg "access plus 30 days"
+		    ExpiresByType image/png "access plus 30 days"
+		    ExpiresByType text/css "access plus 30 days"
+		    ExpiresByType application/javascript "access plus 30 days"
+		</IfModule>
+
+		# Activer la mise en cache
+		<IfModule mod_headers.c>
+		    <FilesMatch "\.(jpg|jpeg|png|gif|js|css)$">
+		        Header set Cache-Control "max-age=31536000, public"
+		    </FilesMatch>
+		</IfModule>
+
+ 
