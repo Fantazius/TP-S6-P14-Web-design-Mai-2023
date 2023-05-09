@@ -3,7 +3,7 @@
         <div class="row align-items-center">
             <div class="col-lg-3 ml-auto">
                 <form class="input-icon my-3 my-lg-0" method="get" action="{{ route('articles.index') }}">
-                    <input type="search" class="form-control header-search" name="keyword" placeholder="Search&hellip;" tabindex="1" value="{{ old('keyword') }}">
+                    <input type="search" class="form-control header-search" name="keyword" placeholder="Search&hellip;" tabindex="1" value="{{ request('keyword') }}">
                     <div class="input-icon-addon">
                         <i class="fe fe-search"></i>
                     </div>

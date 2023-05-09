@@ -21,8 +21,13 @@ class ArticleController extends Controller
             $articles = VArticle::search($keyword);
         } else {
             // $articles = Cache::remember('listes', 120, function () {
-             $articles=VArticle::latest('datepublication')->paginate(ArticleController::PAGINATION)->cache('listes',60);
+            //  $articles=VArticle::latest('datepublication')->paginate(ArticleController::PAGINATION)->cache('listes',60);
             // });
+            $users = Cache::remember('listes' . request('page', 1), 120, function () {
+                return VArticle::latest('datepublication')->paginate(ArticleController::PAGINATION);
+            });
+            
+            
         }
         $response = response()->view('frontoffice.liste', ['articles' => $articles]);
         $response->header('Cache-Control', 'max-age=3600 , public ');
