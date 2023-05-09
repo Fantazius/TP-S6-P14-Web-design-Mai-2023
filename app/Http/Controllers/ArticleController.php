@@ -20,9 +20,9 @@ class ArticleController extends Controller
         if (!empty($keyword)) {
             $articles = VArticle::search($keyword);
         } else {
-            $articles = Cache::remember('listes', 120, function () {
-                return VArticle::latest('datepublication')->paginate(ArticleController::PAGINATION);
-            });
+            // $articles = Cache::remember('listes', 120, function () {
+            return VArticle::latest('datepublication')->paginate(ArticleController::PAGINATION)->cache('listes',60);
+            // });
         }
         $response = response()->view('frontoffice.liste', ['articles' => $articles]);
         $response->header('Cache-Control', 'max-age=3600 , public ');
