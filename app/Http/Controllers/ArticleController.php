@@ -23,7 +23,7 @@ class ArticleController extends Controller
             // $articles = Cache::remember('listes', 120, function () {
             //  $articles=VArticle::latest('datepublication')->paginate(ArticleController::PAGINATION)->cache('listes',60);
             // });
-            $users = Cache::remember('listes' . request('page', 1), 120, function () {
+            $articles = Cache::remember('listes' . request('page', 1), 120, function () {
                 return VArticle::latest('datepublication')->paginate(ArticleController::PAGINATION);
             });
             
